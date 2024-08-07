@@ -1,4 +1,4 @@
-gitsealed interface Command {
+sealed interface Command {
     fun isValid(): Boolean
 }
 
