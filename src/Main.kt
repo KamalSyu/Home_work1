@@ -1,80 +1,236 @@
-fun main() {
-    val commands = listOf(
-        "1. help - список доступных команд",
-        "2. add <Имя> phone <Номер телефона> - добавить номер телефона",
-        "3. add <Имя> email <Адрес электронной почты> - добавить адрес электронной почты",
-        "4. exit - выход из программы"
-    )
+//sealed interface Command {
+//    fun isValid(): Boolean
+//}
+//
+//// Команды для добавления телефона или электронной почты
+//data class AddPhoneCommand(val name: String, val phone: String) : Command {
+//    override fun isValid(): Boolean {
+//        return isValidPhone(phone)
+//    }
+//}
+//
+//data class AddEmailCommand(val name: String, val email: String) : Command {
+//    override fun isValid(): Boolean {
+//        return isValidEmail(email)
+//    }
+//}
+//
+//// Команды для показа и помощи
+//object ShowCommand : Command {
+//    override fun isValid(): Boolean = true
+//}
+//
+//object HelpCommand : Command {
+//    override fun isValid(): Boolean = true
+//}
+//
+//// Команда для выхода
+//object ExitCommand : Command {
+//    override fun isValid(): Boolean = true
+//}
+//
+//data class Person(var name: String, var phone: String? = null, var email: String? = null)
+//
+//val commands = listOf(
+//    "1. help - список доступных команд",
+//    "2. add <Имя> phone <Номер телефона> - добавить номер телефона",
+//    "3. add <Имя> email <Адрес электронной почты> - добавить адрес электронной почты",
+//    "4. show - показать последние сохраненные данные",
+//    "5. exit - выход из программы"
+//)
+//
+//var lastPerson: Person? = null
+//
+//fun main() {
+//    println("Введите номер команды (введите '1' для просмотра доступных команд):")
+//
+//    while (true) {
+//        val choice = readLine() ?: ""
+//        when (choice) {
+//            "1" -> {
+//                println("Доступные команды:")
+//                commands.forEach { println(it) }
+//            }
+//            "2" -> {
+//                println("Введите команду в формате: add <Имя> phone <Номер телефона>")
+//                val addPhoneInput = readLine() ?: ""
+//                val parts = addPhoneInput.trim().split(" ")
+//
+//                if (parts.size == 4 && parts[0] == "add" && parts[2] == "phone") {
+//                    val command = AddPhoneCommand(parts[1], parts[3])
+//                    if (command.isValid()) {
+//                        lastPerson = Person(command.name, command.phone)
+//                        println("Добавлен телефон для ${command.name}: ${command.phone}")
+//                    } else {
+//                        println("Ошибка: Неправильный формат номера телефона.")
+//                    }
+//                } else {
+//                    println("Неверный ввод. Убедитесь, что команда введена правильно.")
+//                }
+//            }
+//            "3" -> {
+//                println("Введите команду в формате: add <Имя> email <Email>")
+//                val addEmailInput = readLine() ?: ""
+//                val parts = addEmailInput.trim().split(" ")
+//
+//                if (parts.size == 4 && parts[0] == "add" && parts[2] == "email") {
+//                    val command = AddEmailCommand(parts[1], parts[3])
+//                    if (command.isValid()) {
+//                        lastPerson = Person(command.name, email = command.email)
+//                        println("Добавлен email для ${command.name}: ${command.email}")
+//                    } else {
+//                        println("Ошибка: Неправильный формат адреса электронной почты.")
+//                    }
+//                } else {
+//                    println("Неверный ввод. Убедитесь, что команда введена правильно.")
+//                }
+//            }
+//            "4" -> {
+//                if (lastPerson != null) {
+//                    println("Последние данные: Имя: ${lastPerson?.name}, Телефон: ${lastPerson?.phone}, Email: ${lastPerson?.email}")
+//                } else {
+//                    println("Данные не были добавлены.")
+//                }
+//            }
+//            "5" -> {
+//                println("Выход из программы.")
+//                return
+//            }
+//            else -> {
+//                println("Неизвестный выбор. Введите '1' для помощи.")
+//            }
+//        }
+//    }
+//}
+//
+//// Проверка формата номера телефона
+//fun isValidPhone(phone: String): Boolean {
+//    return phone.matches(Regex("^\\+?\\d+$"))
+//}
+//
+//// Проверка формата почты
+//fun isValidEmail(email: String): Boolean {
+//    return email.matches(Regex("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"))
+//}
 
-    println("Введите номер команды (введите '1' help для просмотра доступных команд):")
+sealed interface Command {
+    fun isValid(): Boolean
+}
+
+// Команды для добавления телефона или электронной почты
+data class AddPhoneCommand(val name: String, val phone: String) : Command {
+    override fun isValid(): Boolean {
+        return isValidPhone(phone)
+    }
+}
+
+data class AddEmailCommand(val name: String, val email: String) : Command {
+    override fun isValid(): Boolean {
+        return isValidEmail(email)
+    }
+}
+
+object ShowCommand : Command {
+    override fun isValid(): Boolean = true
+}
+
+object HelpCommand : Command {
+    override fun isValid(): Boolean = true
+}
+
+object ExitCommand : Command {
+    override fun isValid(): Boolean = true
+}
+
+data class Person(var name: String, var phone: String? = null, var email: String? = null)
+
+val contacts = mutableListOf<Person>()
+
+val commands = listOf(
+    "1. help - список доступных команд",
+    "2. add <Имя> phone <Номер телефона> - добавить номер телефона",
+    "3. add <Имя> email <Адрес электронной почты> - добавить адрес электронной почты",
+    "4. show - показать последние сохраненные данные",
+    "5. exit - выход из программы"
+)
+
+fun main() {
+    println("Введите номер команды (введите '1' для просмотра доступных команд):")
 
     while (true) {
-        val input = readLine() ?: continue
-
-        when (input) {
-            "1" -> {
-                println("Доступные команды:")
-                commands.forEach { println(it) }
-            }
-            "2" -> {
-                println("Введите команду в формате: add <Имя> phone <Номер телефона> (пример: add Иван phone +1234567890)")
-                val addInput = readLine() ?: continue
-                handleAddCommand(addInput)
-            }
-            "3" -> {
-                println("Введите команду в формате: add <Имя> email <Адрес электронной почты> (пример: add Иван email ivan@example.com)")
-                val addInput = readLine() ?: continue
-                handleAddCommand(addInput)
-            }
-            "4" -> {
-                println("Выход из программы.")
-                break
-            }
-            else -> {
-                println("Неизвестная команда. Пожалуйста, попробуйте снова.")
-            }
+        val choice = readLine()?.trim()?.lowercase() ?: ""
+        when (choice) {
+            "1" -> showHelp()
+            "2" -> addPhone()
+            "3" -> addEmail()
+            "4" -> showContacts()
+            "5" -> exitProgram()
+            else -> println("Неизвестный выбор. Введите '1' для помощи.")
         }
     }
 }
 
-fun handleAddCommand(command: String) {
-    val parts = command.split(" ")
+fun showHelp() {
+    println("Доступные команды:")
+    commands.forEach { println(it) }
+}
 
-    // Проверяем, что в команде достаточно параметров
-    if (parts.size != 4) {
-        println("Неверный формат команды. Используйте: add <Имя> phone <Номер телефона> или add <Имя> email <Адрес электронной почты>")
-        return
-    }
+fun addPhone() {
+    println("Введите команду в формате: add <Имя> phone <Номер телефона> (пример: add Petr phone +7987987987")
+    val input = readLine() ?: ""
+    val parts = input.trim().split(" ")
 
-    val name = parts[1]
-    val type = parts[2]
-    val value = parts[3]
-
-    when (type) {
-        "phone" -> {
-            if (isValidPhone(value)) {
-                println("Добавлен телефон для $name: $value")
-            } else {
-                println("Ошибка: Неправильный формат номера телефона.")
-            }
+    if (parts.size == 4 && parts[0] == "add" && parts[2] == "phone") {
+        val command = AddPhoneCommand(parts[1], parts[3])
+        if (command.isValid()) {
+            contacts.add(Person(command.name, command.phone))
+            println("Добавлен телефон для ${command.name}: ${command.phone}")
+        } else {
+            println("Ошибка: Неправильный формат номера телефона.")
         }
-        "email" -> {
-            if (isValidEmail(value)) {
-                println("Добавлен email для $name: $value")
-            } else {
-                println("Ошибка: Неправильный формат адреса электронной почты.")
-            }
-        }
-        else -> {
-            println("Ошибка: Неверный тип. Используйте 'phone' или 'email'.")
-        }
+    } else {
+        println("Неверный ввод. Убедитесь, что команда введена правильно.")
     }
 }
 
+fun addEmail() {
+    println("Введите команду в формате: add <Имя> email <Email>")
+    val input = readLine() ?: ""
+    val parts = input.trim().split(" ")
+
+    if (parts.size == 4 && parts[0] == "add" && parts[2] == "email") {
+        val command = AddEmailCommand(parts[1], parts[3])
+        if (command.isValid()) {
+            contacts.add(Person(command.name, email = command.email))
+            println("Добавлен email для ${command.name}: ${command.email}")
+        } else {
+            println("Ошибка: Неправильный формат адреса электронной почты.")
+        }
+    } else {
+        println("Неверный ввод. Убедитесь, что команда введена правильно.")
+    }
+}
+
+fun showContacts() {
+    if (contacts.isNotEmpty()) {
+        println("Сохраненные данные:")
+        contacts.forEach { println("Имя: ${it.name}, Телефон: ${it.phone ?: "не задан"}, Email: ${it.email ?: "не задан"}") }
+    } else {
+        println("Данные не были добавлены.")
+    }
+}
+
+fun exitProgram() {
+    println("Выход из программы.")
+    return
+}
+
+// Проверка формата номера телефона
 fun isValidPhone(phone: String): Boolean {
     return phone.matches(Regex("^\\+?\\d+$"))
 }
 
+// Проверка формата почты
 fun isValidEmail(email: String): Boolean {
     return email.matches(Regex("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"))
 }
