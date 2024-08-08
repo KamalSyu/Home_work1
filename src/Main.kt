@@ -27,7 +27,7 @@ object ExitCommand : Command {
     override fun isValid(): Boolean = true
 }
 
-data class Person(var name: String, var phone: String? = null, var email: String? = null)
+data class Person(var name: String, var phones: MutableList<String> = mutableListOf(), var emails: MutableList<String> = mutableListOf())
 
 val contacts = mutableListOf<Person>()
 
@@ -35,8 +35,9 @@ val commands = listOf(
     "1. help - список доступных команд",
     "2. add <Имя> phone <Номер телефона> - добавить номер телефона",
     "3. add <Имя> email <Адрес электронной почты> - добавить адрес электронной почты",
-    "4. show - показать последние сохраненные данные",
-    "5. exit - выход из программы"
+    "4. show <Имя> - показать данные о человеке",
+    "5. find <Телефон или Email> - найти людей по телефону или email",
+    "6. exit - выход из программы"
 )
 
 fun main() {
@@ -44,12 +45,13 @@ fun main() {
 
     while (true) {
         val choice = readLine()?.trim()?.lowercase() ?: ""
-        when (choice) {
-            "1" -> showHelp()
-            "2" -> addPhone()
-            "3" -> addEmail()
-            "4" -> showContacts()
-            "5" -> exitProgram()
+        when {
+            choice == "1" -> showHelp()
+            choice.startsWith("2") -> addPhone()
+            choice.startsWith("3") -> addEmail()
+            choice.startsWith("4") -> showContacts()
+            choice.startsWith("5") -> findPerson()
+            choice == "6" -> exitProgram()
             else -> println("Неизвестный выбор. Введите '1' для помощи.")
         }
     }
@@ -61,14 +63,15 @@ fun showHelp() {
 }
 
 fun addPhone() {
-    println("Введите команду в формате: add <Имя> phone <Номер телефона> (пример: add Petr phone +7987987987")
+    println("Введите команду в формате: add <Имя> phone <Номер телефона> (пример: add Petr phone +7987987987)")
     val input = readLine() ?: ""
     val parts = input.trim().split(" ")
 
     if (parts.size == 4 && parts[0] == "add" && parts[2] == "phone") {
         val command = AddPhoneCommand(parts[1], parts[3])
         if (command.isValid()) {
-            contacts.add(Person(command.name, command.phone))
+            val person = contacts.find { it.name == command.name } ?: Person(command.name).also { contacts.add(it) }
+            person.phones.add(command.phone)
             println("Добавлен телефон для ${command.name}: ${command.phone}")
         } else {
             println("Ошибка: Неправильный формат номера телефона.")
@@ -79,14 +82,15 @@ fun addPhone() {
 }
 
 fun addEmail() {
-    println("Введите команду в формате: add <Имя> email <Email>")
+    println("Введите команду в формате: add <Имя> email <Email> (пример: add Petr email Petr@petr.com)")
     val input = readLine() ?: ""
     val parts = input.trim().split(" ")
 
     if (parts.size == 4 && parts[0] == "add" && parts[2] == "email") {
         val command = AddEmailCommand(parts[1], parts[3])
         if (command.isValid()) {
-            contacts.add(Person(command.name, email = command.email))
+            val person = contacts.find { it.name == command.name } ?: Person(command.name).also { contacts.add(it) }
+            person.emails.add(command.email)
             println("Добавлен email для ${command.name}: ${command.email}")
         } else {
             println("Ошибка: Неправильный формат адреса электронной почты.")
@@ -97,11 +101,32 @@ fun addEmail() {
 }
 
 fun showContacts() {
-    if (contacts.isNotEmpty()) {
-        println("Сохраненные данные:")
-        contacts.forEach { println("Имя: ${it.name}, Телефон: ${it.phone ?: "не задан"}, Email: ${it.email ?: "не задан"}") }
+    println("Введите имя человека для отображения данных:")
+    val name = readLine() ?: ""
+    val person = contacts.find { it.name.equals(name, ignoreCase = true) }
+
+    if (person != null) {
+        println("Данные для ${person.name}:")
+        println("Телефоны: ${if (person.phones.isNotEmpty()) person.phones.joinToString(", ") else "нет"}")
+        println("Email: ${if (person.emails.isNotEmpty()) person.emails.joinToString(", ") else "нет"}")
     } else {
-        println("Данные не были добавлены.")
+        println("Человек с именем '$name' не найден.")
+    }
+}
+
+fun findPerson() {
+    println("Введите телефон или email:")
+    val query = readLine()?.trim() ?: ""
+
+    val foundPersons = contacts.filter { person ->
+        person.phones.contains(query) || person.emails.contains(query)
+    }
+
+    if (foundPersons.isNotEmpty()) {
+        println("Найдены лица:")
+        foundPersons.forEach { println("Имя: ${it.name}, Телефоны: ${it.phones.joinToString(", ")}, Email: ${it.emails.joinToString(", ")}") }
+    } else {
+        println("Люди с таким телефоном или email не найдены.")
     }
 }
 
