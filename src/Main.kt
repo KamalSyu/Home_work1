@@ -1,3 +1,6 @@
+
+import java.io.File
+
 sealed interface Command {
     fun isValid(): Boolean
 }
@@ -15,30 +18,15 @@ data class AddEmailCommand(val name: String, val email: String) : Command {
     }
 }
 
-object ShowCommand : Command {
-    override fun isValid(): Boolean = true
+data class ExportCommand(val path: String) : Command {
+    override fun isValid(): Boolean {
+        return path.isNotEmpty()
+    }
 }
 
-object HelpCommand : Command {
-    override fun isValid(): Boolean = true
-}
-
-object ExitCommand : Command {
-    override fun isValid(): Boolean = true
-}
-
-data class Person(var name: String, var phones: MutableList<String> = mutableListOf(), var emails: MutableList<String> = mutableListOf())
+data class Person(var name: String, val phones: MutableList<String> = mutableListOf(), val emails: MutableList<String> = mutableListOf())
 
 val contacts = mutableListOf<Person>()
-
-val commands = listOf(
-    "1. help - список доступных команд",
-    "2. add <Имя> phone <Номер телефона> - добавить номер телефона",
-    "3. add <Имя> email <Адрес электронной почты> - добавить адрес электронной почты",
-    "4. show <Имя> - показать данные о человеке",
-    "5. find <Телефон или Email> - найти людей по телефону или email",
-    "6. exit - выход из программы"
-)
 
 fun main() {
     println("Введите номер команды (введите '1' для просмотра доступных команд):")
@@ -51,7 +39,8 @@ fun main() {
             choice.startsWith("3") -> addEmail()
             choice.startsWith("4") -> showContacts()
             choice.startsWith("5") -> findPerson()
-            choice == "6" -> exitProgram()
+            choice.startsWith("6") -> exportToFile()
+            choice == "7" -> exitProgram()
             else -> println("Неизвестный выбор. Введите '1' для помощи.")
         }
     }
@@ -59,18 +48,25 @@ fun main() {
 
 fun showHelp() {
     println("Доступные команды:")
-    commands.forEach { println(it) }
+    println("1. help - список доступных команд")
+    println("2. add <Имя> phone <Номер телефона> - добавить номер телефона")
+    println("3. add <Имя> email <Адрес электронной почты> - добавить адрес электронной почты")
+    println("4. show <Имя> - показать данные о человеке")
+    println("5. find <Телефон или Email> - найти людей по телефону или email")
+    println("6. export <path> - экспортировать данные в файл")
+    println("7. exit - выход из программы")
 }
 
 fun addPhone() {
-    println("Введите команду в формате: add <Имя> phone <Номер телефона> (пример: add Petr phone +7987987987)")
+    println("Введите команду в формате: add <Имя> phone <Номер телефона> (Пример: add Petr phone +7987987987987987987)")
     val input = readLine() ?: ""
     val parts = input.trim().split(" ")
 
     if (parts.size == 4 && parts[0] == "add" && parts[2] == "phone") {
         val command = AddPhoneCommand(parts[1], parts[3])
         if (command.isValid()) {
-            val person = contacts.find { it.name == command.name } ?: Person(command.name).also { contacts.add(it) }
+            val person = contacts.find { it.name.equals(command.name, ignoreCase = true) }
+                ?: Person(command.name).also { contacts.add(it) }
             person.phones.add(command.phone)
             println("Добавлен телефон для ${command.name}: ${command.phone}")
         } else {
@@ -79,17 +75,20 @@ fun addPhone() {
     } else {
         println("Неверный ввод. Убедитесь, что команда введена правильно.")
     }
+
+
 }
 
 fun addEmail() {
-    println("Введите команду в формате: add <Имя> email <Email> (пример: add Petr email Petr@petr.com)")
+    println("Введите команду в формате: add <Имя> email <Email> (Пример: add Petr email Petr@petr.com)")
     val input = readLine() ?: ""
     val parts = input.trim().split(" ")
 
     if (parts.size == 4 && parts[0] == "add" && parts[2] == "email") {
         val command = AddEmailCommand(parts[1], parts[3])
         if (command.isValid()) {
-            val person = contacts.find { it.name == command.name } ?: Person(command.name).also { contacts.add(it) }
+            val person = contacts.find { it.name.equals(command.name, ignoreCase = true) }
+                ?: Person(command.name).also { contacts.add(it) }
             person.emails.add(command.email)
             println("Добавлен email для ${command.name}: ${command.email}")
         } else {
@@ -98,6 +97,7 @@ fun addEmail() {
     } else {
         println("Неверный ввод. Убедитесь, что команда введена правильно.")
     }
+
 }
 
 fun showContacts() {
@@ -124,20 +124,53 @@ fun findPerson() {
 
     if (foundPersons.isNotEmpty()) {
         println("Найдены лица:")
-        foundPersons.forEach { println("Имя: ${it.name}, Телефоны: ${it.phones.joinToString(", ")}, Email: ${it.emails.joinToString(", ")}") }
+        foundPersons.forEach {
+            println("Имя: ${it.name}, Телефоны: ${it.phones.joinToString(", ")}, Email: ${it.emails.joinToString(", ")}")
+        }
     } else {
         println("Люди с таким телефоном или email не найдены.")
     }
 }
 
+fun exportToFile() {
+    println("Введите путь к файлу для экспорта: (Пример: export /Users/user/myfile.json)")
+    val path = readLine()?.trim() ?: ""
+
+    val command = ExportCommand(path)
+    if (command.isValid()) {
+        val jsonString = contacts.toJson()
+        File(path).writeText(jsonString)  // Записываем текст в файл
+        println("Данные успешно экспортированы в $path")
+    } else {
+        println("Ошибка: Неверный путь к файлу.")
+    }
+
+}
+
 fun exitProgram() {
     println("Выход из программы.")
-    return
+}
+
+fun List<Person>.toJson(): String {
+    val jsonBuilder = StringBuilder()
+    jsonBuilder.append("[")
+
+    this.forEachIndexed { index, person ->
+        jsonBuilder.append("{")
+        jsonBuilder.append("\"name\": \"${person.name}\",")
+        jsonBuilder.append("\"phones\": [${person.phones.joinToString(", ") { "\"$it\"" }}],")
+        jsonBuilder.append("\"emails\": [${person.emails.joinToString(", ") { "\"$it\"" }}]")
+        jsonBuilder.append("}")
+        if (index < this.size - 1) jsonBuilder.append(",")
+    }
+
+    jsonBuilder.append("]")
+    return jsonBuilder.toString()
 }
 
 // Проверка формата номера телефона
 fun isValidPhone(phone: String): Boolean {
-    return phone.matches(Regex("^\\+?\\d+$"))
+    return phone.matches(Regex("^[+]?[0-9]+$")) // Простой формат для проверки
 }
 
 // Проверка формата почты
